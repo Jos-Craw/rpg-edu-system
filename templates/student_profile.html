@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <h1>{{ student.name }}</h1>
+    <p style="color: #95a5a6;">{{ student.group.name }}</p>
+
+    <div class="level-badge">Уровень {{ student.level }}</div>
+    <div class="rank rank-{{ student.rank|lower }}">{{ student.rank }} {{student.get_rank_icon}}</div>
+
+<div class="xp-bar">
+    <div class="xp-fill" style="width: {{ progress_percent }}%;"></div>
+</div>
+
+<div class="xp-text">
+    {{ current_xp }} XP ({{ level_start }} → {{ level_end }})
+</div>
+
+    <div class="profile-content-grid">
+        
+        <section>
+            <h3 style="margin-bottom: 20px;">📜 История подвигов</h3>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Тема</th>
+                        <th>XP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in performances %}
+                    <tr>
+                        <td>{{ p.lesson.date|date:"d.m" }}</td>
+                        <td>{{ p.lesson.topic }}</td>
+                        <td style="font-weight: bold;">{{ p.classwork_score|add:p.homework_score }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: #bdc3c7; padding: 30px;">
+                            Приключений еще не было
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section style="background: #fcfcfc; padding: 20px; border-radius: 15px;">
+            <h3 style="text-align: center; margin-bottom: 15px;">Параметры</h3>
+            <canvas id="radarChart"></canvas>
+        </section>
+    </div>
+
+    <a href="{% url 'group_detail' student.group.id %}" class="btn-back">Назад к группе</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Класс', 'Дом', 'Посещение', 'Прогресс', 'Опыт'],
+            datasets: [{
+                data: {{ stats_data|safe }},
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                borderColor: '#3498db',
+                borderWidth: 2,
+                pointBackgroundColor: '#3498db'
+            }]
+        },
+        options: {
+            scales: {
+                r: {
+                    min: 0, max: 100,
+                    ticks: { display: false },
+                    grid: { color: '#f0f0f0' }
+                }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+{% endblock %}

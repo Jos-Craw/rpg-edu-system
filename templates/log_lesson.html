@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Новое занятие | {{ group.name }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'group_detail' group.id %}" style="text-decoration: none; color: var(--accent);">← Вернуться к группе</a>
+    <h2 style="margin-top: 10px;">📓 Новое занятие: {{ group.name }}</h2>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display:block; font-weight: bold; margin-bottom: 5px;">Дата:</label>
+                <input type="date" name="date" value="{{ today|date:'Y-m-d' }}" style="width: 100%;">
+            </div>
+            <div style="flex: 2; min-width: 300px;">
+                <label style="display:block; font-weight: bold; margin-bottom: 5px;">Тема занятия:</label>
+                <input type="text" name="topic" placeholder="Название темы..." style="width: 100%;" required>
+            </div>
+        </div>
+
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 30px;">
+            <div style="display: flex; gap: 30px; margin-bottom: 15px;">
+                <label>📎 <b>Файл темы:</b> <input type="file" name="topic_file"></label>
+                <label>📝 <b>Файл ДЗ:</b> <input type="file" name="homework_file"></label>
+            </div>
+            <label style="display:block; font-weight: bold; margin-bottom: 5px;">Описание ДЗ (текст):</label>
+            <textarea name="homework_description" rows="2" style="width: 100%; resize: vertical;"></textarea>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Студент</th>
+                    <th style="text-align: center;">Был?</th>
+                    <th style="text-align: center;">ДЗ (XP)</th>
+                    <th style="text-align: center;">Класс (XP)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td><strong>{{ student.name }}</strong></td>
+                    <td style="text-align: center;"><input type="checkbox" name="present_{{ student.id }}" checked></td>
+                    <td style="text-align: center;"><input type="number" name="hw_{{ student.id }}" class="input-score" value="0"></td>
+                    <td style="text-align: center;"><input type="number" name="cw_{{ student.id }}" class="input-score" value="0"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <button type="submit" class="btn btn-success">Завершить и начислить XP ⚔️</button>
+    </form>
+{% endblock %}

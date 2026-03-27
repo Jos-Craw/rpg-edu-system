@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto; padding: 20px;">
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+    
+    <!-- Карточка 1 -->
+    <div style="background: white; padding: 25px; border-radius: 20px; border-left: 8px solid #3498db; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <small style="color: #a0aec0; font-weight: bold; text-transform: uppercase;">Всего групп</small>
+        <div style="font-size: 32px; font-weight: bold;">{{ groups|length }}</div>
+    </div>
+
+    <!-- Карточка 2 -->
+    <div style="background: white; padding: 25px; border-radius: 20px; border-left: 8px solid #2ecc71; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <small style="color: #a0aec0; font-weight: bold; text-transform: uppercase;">Проведено уроков</small>
+        <div style="font-size: 32px; font-weight: bold;">{{ all_lessons|length }}</div>
+    </div>
+
+    <!-- Карточка 3: Заменил переменную на текущую дату -->
+    <div style="background: white; padding: 25px; border-radius: 20px; border-left: 8px solid #ffcb00; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <small style="color: #a0aec0; font-weight: bold; text-transform: uppercase;">Сегодняшняя дата</small>
+        <div style="font-size: 32px; font-weight: bold;">{% now "d.M.Y" %}</div>
+    </div>
+    
+</div>
+
+<!--     <h3 style="margin-bottom: 15px;">🔥 Активность героев</h3>
+    <div style="background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 40px;">
+        <div id="activityChart"></div>
+    </div> -->
+
+    <h3 style="margin-bottom: 15px;">👥 Мои группы</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px;">
+        {% for group in groups %}
+        <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">
+            <h4 style="margin-bottom: 15px;">{{ group.name }}</h4>
+            <a href="{% url 'group_detail' group.id %}" 
+               style="background: #3498db; color: white; padding: 10px 25px; border-radius: 10px; text-decoration: none; display: inline-block; font-weight: bold;">
+               Открыть журнал
+            </a>
+        </div>
+        {% empty %}
+        <p style="color: #a0aec0;">Групп пока нет.</p>
+        {% endfor %}
+    </div>
+
+    <h3 style="margin-bottom: 15px;">📜 Недавние темы</h3>
+    <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        {% for lesson in all_lessons|slice:":5" %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f8f9fa;">
+            <div>
+                <small style="color: #a0aec0;">{{ lesson.date|date:"d.m" }} — {{ lesson.group.name }}</small>
+                <div style="font-weight: 600; margin-top: 5px;">{{ lesson.topic }}</div>
+            </div>
+            <a href="{% url 'lesson_detail' lesson.id %}" style="color: #3498db; text-decoration: none; font-size: 20px;">→</a>
+        </div>
+        {% endfor %}
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'all_lessons' %}" style="color: #3498db; text-decoration: none; font-weight: bold;">Смотреть все →</a>
+        </div>
+    </div>
+
+</div>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    const options = {
+        series: [{ name: 'XP', data: {{ heatmap_data|safe }} }],
+        chart: { height: 150, type: 'heatmap', toolbar: { show: false } },
+        dataLabels: { enabled: false },
+        colors: ["#2ecc71"],
+        plotOptions: {
+            heatmap: {
+                radius: 5,
+                colorScale: {
+                    ranges: [{ from: 0, to: 0, color: '#f8f9fa' }, { from: 1, to: 1000, color: '#2ecc71' }]
+                }
+            }
+        }
+    };
+    new ApexCharts(document.querySelector("#activityChart"), options).render();
+</script> -->
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Все уроки | Электронный журнал{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h2 style="margin: 0;">📚 Полная история занятий</h2>
+    <a href="{% url 'home' %}" style="text-decoration: none; color: #3498db; font-weight: bold;">← На главную</a>
+</div>
+
+<div style="background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #f8f9fa;">
+                <th style="padding: 15px; text-align: left; color: #95a5a6; text-transform: uppercase; font-size: 12px;">Дата</th>
+                <th style="padding: 15px; text-align: left; color: #95a5a6; text-transform: uppercase; font-size: 12px;">Группа</th>
+                <th style="padding: 15px; text-align: left; color: #95a5a6; text-transform: uppercase; font-size: 12px;">Тема занятия</th>
+                <th style="padding: 15px; text-align: left; color: #95a5a6; text-transform: uppercase; font-size: 12px;">Материалы</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in all_lessons %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 15px; color: #7f8c8d;">{{ lesson.date|date:"d.m.Y" }}</td>
+                <td style="padding: 15px;">
+                    <a href="{% url 'group_detail' lesson.group.id %}" style="color: #2c3e50; font-weight: bold; text-decoration: none; border-bottom: 1px dashed #ccc;">
+                        {{ lesson.group.name }}
+                    </a>
+                </td>
+                <td style="padding: 15px;">
+                    <a href="{% url 'lesson_detail' lesson.id %}" style="color: #3498db; font-weight: bold; text-decoration: none;">
+                        {{ lesson.topic }}
+                    </a>
+                </td>
+                <td style="padding: 15px;">
+                    {% if lesson.topic_file %}
+                        <a href="{{ lesson.topic_file.url }}" target="_blank" style="text-decoration: none; margin-right: 10px;" title="Тема">📄</a>
+                    {% endif %}
+                    {% if lesson.homework_file %}
+                        <a href="{{ lesson.homework_file.url }}" target="_blank" style="text-decoration: none;" title="ДЗ">📝</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 40px; text-align: center; color: #999;">
+                    Занятий пока не найдено. Начните с первой группы!
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

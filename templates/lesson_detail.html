@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Урок: {{ lesson.topic }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'home' %}" style="text-decoration: none; color: var(--accent);">← На главную</a>
+    <h2 style="margin: 10px 0;">📊 Итоги занятия: {{ lesson.topic }}</h2>
+    <p style="color: #7f8c8d;">Группа: <b>{{ lesson.group.name }}</b> | Дата: <b>{{ lesson.date|date:"d.m.Y" }}</b></p>
+
+    {% if lesson.topic_file or lesson.homework_file %}
+    <div style="background: #eef7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <span style="font-weight: bold; margin-right: 15px;">Файлы:</span>
+        {% if lesson.topic_file %}<a href="{{ lesson.topic_file.url }}" target="_blank" style="margin-right: 15px;">📄 Материалы темы</a>{% endif %}
+        {% if lesson.homework_file %}<a href="{{ lesson.homework_file.url }}" target="_blank">📝 Домашнее задание</a>{% endif %}
+    </div>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Студент</th>
+                <th>Присутствие</th>
+                <th>ДЗ</th>
+                <th>Работа в классе</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for perf in performances %}
+            <tr>
+                <td>
+                    <a href="{% url 'student_profile' perf.student.id %}" style="color: var(--primary); font-weight: bold; text-decoration: none;">
+                        {{ perf.student.name }}
+                    </a>
+                </td>
+                <td>
+                    {% if perf.is_present %}
+                        <span style="color: var(--success); font-weight: bold;">Был</span>
+                    {% else %}
+                        <span style="color: var(--danger); font-weight: bold;">НЕТ</span>
+                    {% endif %}
+                </td>
+                <td>+{{ perf.homework_score }}</td>
+                <td>+{{ perf.classwork_score }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

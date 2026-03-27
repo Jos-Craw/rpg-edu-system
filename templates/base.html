@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Панель управления{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<header>
+    <h1>📘 Электронный журнал</h1>
+    <nav style="margin-top: 10px;">
+        <a href="{% url 'home' %}" style="color: white; margin-right: 20px; text-decoration: none; font-weight: bold;">🏠 Главная</a>
+        <a href="{% url 'all_lessons' %}" style="color: white; text-decoration: none; opacity: 0.9;">📚 Все уроки</a>
+    </nav>
+</header>
+
+<div class="container" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>
