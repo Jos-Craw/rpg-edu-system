@@ -1,6 +1,7 @@
 from django.db import models
 import os
 from django.core.validators import MinValueValidator, MaxValueValidator
+from .utils import get_xp_for_next_level, get_level_thresholds
 
 class Group(models.Model):
     name = models.CharField("Название группы", max_length=100)
@@ -9,34 +10,58 @@ class Group(models.Model):
 
     def __str__(self): return self.name
 
-class Student(models.Model):
-    RANK_CHOICES = [
-        ('Странник', 'Странник'),
-        ('Ученик', 'Ученик'),
-        ('Искатель', 'Искатель'),
-        ('Опытный', 'Опытный'),
-        ('Мастер', 'Мастер'),
-        ('Магистр', 'Магистр'),
-        ('Легенда', 'Легенда'),
-    ]
+def get_xp_for_next_level(level):
+    if level < 3:
+        return 10
+    elif level < 7:
+        return 15
+    elif level < 10:
+        return 20
+    elif level < 15:
+        return 25
+    elif level < 18:
+        return 30
+    else:
+        return 40
 
+
+class Student(models.Model):
     name = models.CharField("ФИО", max_length=100)
     group = models.ForeignKey('Group', on_delete=models.CASCADE)
-
-    level = models.IntegerField(
-        "Уровень",
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(30)]
-    )
-
     xp = models.IntegerField("Очки опыта (XP)", default=0)
 
-    rank = models.CharField(
-        "Ранг",
-        max_length=50,
-        choices=RANK_CHOICES,
-        blank=True
-    )
+    @property
+    def rank(self):
+        if self.level < 3:
+            return "Странник"
+        elif self.level < 6:
+            return "Ученик"
+        elif self.level < 10:
+            return "Искатель"
+        elif self.level < 15:
+            return "Опытный"
+        elif self.level < 21:
+            return "Мастер"
+        elif self.level < 30:
+            return "Магистр"
+        else:
+            return "Легенда"
+
+    @property
+    def level(self):
+        xp_left = self.xp
+        level = 0
+
+        while True:
+            need = get_xp_for_next_level(level)
+
+            if xp_left < need:
+                break
+
+            xp_left -= need
+            level += 1
+
+        return level
 
     def recalculate_stats(self):
         performances = self.performance_set.all()
@@ -51,48 +76,35 @@ class Student(models.Model):
                 total_xp += p.homework_score * 3
 
         self.xp = total_xp
-        xp = total_xp
+
+        # --- НОВАЯ ЛОГИКА УРОВНЕЙ ---
+        xp_left = total_xp
         level = 0
 
         while True:
-            if level == 0:
-                need = 10
-            elif level == 1:
-                need = 20
-            elif level == 2:
-                need = 30
-            elif level == 3:
-                need = 40
-            else:
-                need = 30
+            need = get_xp_for_next_level(level)
 
-            if xp < need:
+            if xp_left < need:
                 break
 
-            xp -= need
+            xp_left -= need
             level += 1
 
-        self.level = level
+    def recalculate_stats(self):
+        performances = self.performance_set.all()
 
-        self._update_rank_by_level()
+        total_xp = 0
 
+        for p in performances:
+            if p.classwork_score:
+                total_xp += p.classwork_score * 2
+
+            if p.homework_score:
+                total_xp += p.homework_score * 3
+
+        self.xp = total_xp
         self.save()
 
-    def _update_rank_by_level(self):
-        if self.level < 3:
-            self.rank = "Странник"
-        elif self.level < 6:
-            self.rank = "Ученик"
-        elif self.level < 10:
-            self.rank = "Искатель"
-        elif self.level < 15:
-            self.rank = "Опытный"
-        elif self.level < 21:
-            self.rank = "Мастер"
-        elif self.level < 30:
-            self.rank = "Магистр"
-        else:
-            self.rank = "Легенда"
 
     def get_rank_icon(self):
         icons = {

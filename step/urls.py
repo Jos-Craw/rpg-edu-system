@@ -8,5 +8,6 @@ urlpatterns = [
     path('student/<int:student_id>/', views.student_profile, name='student_profile'),
     path('lessons/', views.all_lessons_view, name='all_lessons'),
     path('lesson/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),
+    path('export-full/', views.export_full_xlsx, name='export_full'),
 
 ]

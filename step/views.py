@@ -5,6 +5,16 @@ import datetime
 from django.db.models import Avg, Count, Sum
 from django.utils import timezone
 import json
+from .utils import get_xp_for_next_level, get_level_thresholds
+from collections import Counter
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.chart import LineChart, Reference, PieChart
+from openpyxl.styles import Font
+from collections import Counter
+
+from .models import Group, Performance
+
 
 
 def home(request):
@@ -37,9 +47,10 @@ def group_detail(request, id):
             points.append({'x': lesson.date.strftime('%d.%m'), 'y': total_xp})
         line_series.append({'name': student.name, 'data': points})
 
-    rank_stats = group.student_set.values('rank').annotate(count=Count('id'))
-    donut_labels = [item['rank'] for item in rank_stats]
-    donut_values = [item['count'] for item in rank_stats]
+    ranks = [s.rank for s in students]
+    rank_count = Counter(ranks)
+    donut_labels = list(rank_count.keys())
+    donut_values = list(rank_count.values())
 
     return render(request, 'group.html', {
         'group': group,
@@ -111,31 +122,28 @@ def student_profile(request, student_id):
     level = student.level
 
     def get_level_thresholds(level):
-        if level == 0:
-            return 0, 10
-        elif level == 1:
-            return 10, 30
-        elif level == 2:
-            return 30, 60
-        elif level == 3:
-            return 60, 100
-        elif level == 4:
-            return 100, 150
-        else:
-            start = level * 30
-            end = (level + 1) * 30
-            return start, end
+        total = 0
 
-    start_xp, end_xp = get_level_thresholds(level)
+        for lvl in range(level):
+            total += get_xp_for_next_level(lvl)
 
+        start = total
+        end = total + get_xp_for_next_level(level)
 
-    current_level_xp = total_xp - start_xp
-    needed_xp = end_xp - start_xp
+        return start, end
 
-    if current_level_xp < 0:
-        current_level_xp = 0
+    start_xp, end_xp = get_level_thresholds(student.level)
 
-    progress_percent = int((current_level_xp / needed_xp) * 100) if needed_xp > 0 else 0
+    current = student.xp - start_xp
+    needed = end_xp - start_xp
+
+    # защита
+    if current < 0:
+        current = 0
+    if current > needed:
+        current = needed
+
+    progress_percent = int((current / needed) * 100) if needed > 0 else 0
 
     perf_query = Performance.objects.filter(student=student)
 
@@ -156,6 +164,10 @@ def student_profile(request, student_id):
 
     performances = perf_query.order_by('-lesson__date')[:10]
 
+    current = student.xp - start_xp
+    needed = end_xp - start_xp
+
+
     return render(request, 'student_profile.html', {
         'student': student,
         'current_xp': total_xp,
@@ -164,7 +176,11 @@ def student_profile(request, student_id):
         'progress_percent': progress_percent,
         'performances': performances,
         'stats_data': stats_data,
+        'current': current,
+        'needed': needed,
+        'progress_percent': progress_percent,
     })
+
 
 
 
@@ -189,3 +205,101 @@ def lesson_detail(request, lesson_id):
     })
 
 
+def export_full_xlsx(request):
+    wb = Workbook()
+    wb.remove(wb.active)
+
+    groups = Group.objects.all()
+
+    for group in groups:
+        ws = wb.create_sheet(title=group.name[:30])
+
+        # --- ЗАГОЛОВКИ ---
+        headers = ["Дата"]
+        students = list(group.student_set.all())
+        lessons = list(group.lesson_set.all().order_by('date'))
+
+        for s in students:
+            headers.append(s.name)
+
+        ws.append(headers)
+
+        for col in ws[1]:
+            col.font = Font(bold=True)
+
+        # --- ДАННЫЕ ДЛЯ ГРАФИКА XP ---
+        student_totals = {s.id: 0 for s in students}
+
+        row_index = 2
+
+        for lesson in lessons:
+            row = [lesson.date.strftime('%d.%m')]
+
+            for s in students:
+                perf = Performance.objects.filter(student=s, lesson=lesson).first()
+
+                xp = 0
+                if perf:
+                    xp = (perf.classwork_score or 0) * 2 + (perf.homework_score or 0) * 3
+
+                student_totals[s.id] += xp
+                row.append(student_totals[s.id])
+
+            ws.append(row)
+            row_index += 1
+
+        # --- 📈 LINE CHART (XP рост) ---
+        chart = LineChart()
+        chart.title = f"Прогресс XP — {group.name}"
+
+        data = Reference(ws, min_col=2, max_col=len(students)+1, min_row=1, max_row=row_index-1)
+        cats = Reference(ws, min_col=1, min_row=2, max_row=row_index-1)
+
+        chart.add_data(data, titles_from_data=True)
+        chart.set_categories(cats)
+
+        ws.add_chart(chart, f"A{row_index + 2}")
+
+        # --- 🥧 PIE CHART (ранги) ---
+        rank_list = [s.rank for s in students]
+        rank_count = Counter(rank_list)
+
+        pie_start = row_index + 20
+
+        ws[f"A{pie_start}"] = "Ранг"
+        ws[f"B{pie_start}"] = "Кол-во"
+
+        i = pie_start + 1
+        for rank, count in rank_count.items():
+            ws[f"A{i}"] = rank
+            ws[f"B{i}"] = count
+            i += 1
+
+        pie = PieChart()
+        labels = Reference(ws, min_col=1, min_row=pie_start+1, max_row=i-1)
+        data = Reference(ws, min_col=2, min_row=pie_start, max_row=i-1)
+
+        pie.add_data(data, titles_from_data=True)
+        pie.set_categories(labels)
+
+        ws.add_chart(pie, f"D{pie_start}")
+
+        # --- 🏆 ТОП СТУДЕНТОВ ---
+        top_start = pie_start + 15
+        ws[f"A{top_start}"] = "ТОП студентов"
+        ws[f"A{top_start}"].font = Font(bold=True)
+
+        top_students = sorted(students, key=lambda x: x.xp, reverse=True)[:5]
+
+        for idx, s in enumerate(top_students, start=1):
+            ws[f"A{top_start + idx}"] = f"{idx}. {s.name}"
+            ws[f"B{top_start + idx}"] = s.xp
+
+    # --- ОТДАЧА ---
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=analytics.xlsx'
+
+    wb.save(response)
+    return response

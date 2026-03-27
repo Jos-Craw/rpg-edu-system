@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import Group, Student, Lesson, Attendance, Performance
+from .utils import get_xp_for_next_level, get_level_thresholds
+from django.utils.html import format_html
 
 class AttendanceInline(admin.TabularInline):
     model = Attendance
@@ -24,31 +26,20 @@ class StudentAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "level", "xp", "rank", "xp_progress")
 
     def xp_progress(self, obj):
-        def get_level_thresholds(level):
-            if level == 0:
-                return 0, 10
-            elif level == 1:
-                return 10, 30
-            elif level == 2:
-                return 30, 60
-            elif level == 3:
-                return 60, 100
-            elif level == 4:
-                return 100, 150
-            else:
-                start = level * 30
-                end = (level + 1) * 30
-                return start, end
-
         start, end = get_level_thresholds(obj.level)
 
         current = obj.xp - start
         needed = end - start
 
+        # защита
         if current < 0:
             current = 0
+        if current > needed:
+            current = needed
 
-        return f"{current} / {needed} XP"
+        percent = int((current / needed) * 100) if needed > 0 else 0
+
+        return f"{current} / {needed} XP ({percent}%)"
 
     xp_progress.short_description = "Прогресс"
 
