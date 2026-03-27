@@ -1,10 +1,9 @@
 from django.contrib import admin
 from .models import Group, Student, Lesson, Attendance, Performance
 
-# Классы для "вложенного" редактирования
 class AttendanceInline(admin.TabularInline):
     model = Attendance
-    extra = 0 # Чтобы не плодились пустые строки
+    extra = 0
 
 class PerformanceInline(admin.TabularInline):
     model = Performance
@@ -12,9 +11,7 @@ class PerformanceInline(admin.TabularInline):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    # Добавь файлы в список отображения и в саму форму
     list_display = ('group', 'date', 'topic_summary')
-    # Если у тебя прописан fields, добавь туда новые поля:
     fields = ('group', 'date', 'topic', 'topic_file', 'homework_description', 'homework_file')
     inlines = [AttendanceInline, PerformanceInline]
 
@@ -27,7 +24,6 @@ class StudentAdmin(admin.ModelAdmin):
     list_display = ("name", "group", "level", "xp", "rank", "xp_progress")
 
     def xp_progress(self, obj):
-        # границы уровня
         def get_level_thresholds(level):
             if level == 0:
                 return 0, 10
@@ -56,8 +52,6 @@ class StudentAdmin(admin.ModelAdmin):
 
     xp_progress.short_description = "Прогресс"
 
-# Регистрируем остальное
 admin.site.register(Group)
-# Lesson уже зарегистрирован через @admin.register
 admin.site.register(Attendance)
 admin.site.register(Performance)

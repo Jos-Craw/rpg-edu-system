@@ -56,7 +56,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
-    // 1. Настройка ЛИНЕЙНОГО ГРАФИКА
     new ApexCharts(document.querySelector("#lineChart"), {
         series: {{ line_chart_data|safe }},
         chart: { type: 'line', height: 300, toolbar: {show: false} },
@@ -64,8 +63,6 @@
         xaxis: { type: 'category' },
         colors: ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c']
     }).render();
-
-    // 2. Настройка БУБЛИКА
     new ApexCharts(document.querySelector("#donutChart"), {
         series: {{ donut_values|safe }},
         labels: {{ donut_labels|safe }},

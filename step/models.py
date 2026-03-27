@@ -38,7 +38,6 @@ class Student(models.Model):
         blank=True
     )
 
-    # --- ГЛАВНАЯ ФУНКЦИЯ ---
     def recalculate_stats(self):
         performances = self.performance_set.all()
 
@@ -52,8 +51,6 @@ class Student(models.Model):
                 total_xp += p.homework_score * 3
 
         self.xp = total_xp
-
-        # --- ПРАВИЛЬНЫЙ РАСЧЕТ УРОВНЯ ---
         xp = total_xp
         level = 0
 
@@ -77,12 +74,10 @@ class Student(models.Model):
 
         self.level = level
 
-        # ранг
         self._update_rank_by_level()
 
         self.save()
 
-    # --- РАНГ ---
     def _update_rank_by_level(self):
         if self.level < 3:
             self.rank = "Странник"
@@ -99,7 +94,6 @@ class Student(models.Model):
         else:
             self.rank = "Легенда"
 
-    # --- ИКОНКА ---
     def get_rank_icon(self):
         icons = {
             "Странник": "🪨",
@@ -143,7 +137,6 @@ class Attendance(models.Model):
 
     def __str__(self):
         icon = "✅" if self.status else "❌"
-        # Будет выглядеть так: "✅ Иванов Иван — Урок №5"
         return f"{icon} {self.student.name} — {self.lesson}"
 
 class Performance(models.Model):
@@ -153,12 +146,10 @@ class Performance(models.Model):
     classwork_score = models.IntegerField("Балл в классе (0-10)", default=0)
 
     def __str__(self):
-        # Будет выглядеть так: "Иванов Иван | ДЗ: 8, Класс: 10"
         return f"{self.student.name} | ДЗ: {self.homework_score}, Класс: {self.classwork_score}"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-        # после сохранения пересчитываем студента
         if self.student:
             self.student.recalculate_stats()

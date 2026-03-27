@@ -8,29 +8,17 @@ import json
 
 
 def home(request):
-    # Достаем реальные данные
-    groups = Group.objects.all() # или .filter(teacher=request.user)
+    groups = Group.objects.all()
     all_lessons = Lesson.objects.all().order_by('-date')
     
-    # # Считаем активность (тепловая карта)
-    # last_month = timezone.now() - timezone.timedelta(days=30)
-    # daily_activity = Performance.objects.filter(lesson__date__gte=last_month) \
-    #     .values('lesson__date') \
-    #     .annotate(total_xp=Sum('classwork_score') + Sum('homework_score')) \
-    #     .order_by('lesson__date')
-
-    # heatmap_data = [{'x': str(item['lesson__date']), 'y': item['total_xp']} for item in daily_activity]
-
     return render(request, 'home.html', {
-        'groups': groups,             # Проверь это имя!
-        'all_lessons': all_lessons,   # И это!
-        # 'heatmap_data': json.dumps(heatmap_data),
+        'groups': groups,            
+        'all_lessons': all_lessons,   
     })
 
 
 
 def group_detail(request, id):
-    # Используем id, который пришел из urls.py
     group = get_object_or_404(Group, id=id)
     students = group.student_set.all()
     lessons = group.lesson_set.all().order_by('date')
@@ -67,14 +55,11 @@ def log_lesson(request, group_id):
     students = group.student_set.all()
     
     if request.method == "POST":
-        # 1. Создаем урок (добавляем request.FILES)
         lesson = Lesson.objects.create(
             group=group,
             date=request.POST.get('date') or datetime.date.today(),
             topic=request.POST.get('topic', 'Без темы'),
-            # Имена должны совпадать с name="hw_desc" в HTML
             homework_description=request.POST.get('hw_desc', ''),
-            # FILES берем из отдельного словаря
             topic_file=request.FILES.get('topic_file'),
             homework_file=request.FILES.get('homework_file')
         )
@@ -83,10 +68,7 @@ def log_lesson(request, group_id):
         performances_to_create = []
         
         for student in students:
-            # Чекбокс возвращает 'on', если нажат
             is_present = request.POST.get(f'present_{student.id}') == 'on'
-            
-            # Обязательно приводим к int, чтобы не упало при сложении XP
             hw_val = int(request.POST.get(f'hw_{student.id}', 0))
             cw_val = int(request.POST.get(f'cw_{student.id}', 0))
             
@@ -102,8 +84,6 @@ def log_lesson(request, group_id):
                 )
             )
             
-
-        # Массовое сохранение в БД
         Attendance.objects.bulk_create(attendances_to_create)
         Performance.objects.bulk_create(performances_to_create)
         for student in students:
@@ -130,7 +110,6 @@ def student_profile(request, student_id):
     total_xp = student.xp
     level = student.level
 
-    # --- ГРАНИЦЫ УРОВНЯ ---
     def get_level_thresholds(level):
         if level == 0:
             return 0, 10
@@ -149,17 +128,15 @@ def student_profile(request, student_id):
 
     start_xp, end_xp = get_level_thresholds(level)
 
-    # XP внутри уровня
+
     current_level_xp = total_xp - start_xp
     needed_xp = end_xp - start_xp
 
-    # защита от багов
     if current_level_xp < 0:
         current_level_xp = 0
 
     progress_percent = int((current_level_xp / needed_xp) * 100) if needed_xp > 0 else 0
 
-    # --- СТАТИСТИКА ---
     perf_query = Performance.objects.filter(student=student)
 
     avg_class = perf_query.aggregate(Avg('classwork_score'))['classwork_score__avg'] or 0
@@ -181,18 +158,10 @@ def student_profile(request, student_id):
 
     return render(request, 'student_profile.html', {
         'student': student,
-
-        # XP
         'current_xp': total_xp,
-
-        # границы уровня
         'level_start': start_xp,
         'level_end': end_xp,
-
-        # прогресс
         'progress_percent': progress_percent,
-
-        # остальное
         'performances': performances,
         'stats_data': stats_data,
     })
@@ -203,7 +172,6 @@ def student_profile(request, student_id):
 
 
 def all_lessons_view(request):
-    # Получаем все занятия из базы данных
     lessons = Lesson.objects.all().order_by("-date")
     return render(request, 'all_lessons.html', {'all_lessons': lessons})
 
@@ -211,7 +179,6 @@ def lesson_detail(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     performances = Performance.objects.filter(lesson=lesson).select_related('student')
     
-    # Находим посещаемость и приклеиваем её прямо к объектам оценок
     for perf in performances:
         att = Attendance.objects.filter(lesson=lesson, student=perf.student).first()
         perf.is_present = att.status if att else False

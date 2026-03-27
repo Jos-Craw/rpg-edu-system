@@ -24,12 +24,6 @@
     </div>
     
 </div>
-
-<!--     <h3 style="margin-bottom: 15px;">🔥 Активность героев</h3>
-    <div style="background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 40px;">
-        <div id="activityChart"></div>
-    </div> -->
-
     <h3 style="margin-bottom: 15px;">👥 Мои группы</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px;">
         {% for group in groups %}
@@ -62,23 +56,4 @@
     </div>
 
 </div>
-
-<!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script>
-    const options = {
-        series: [{ name: 'XP', data: {{ heatmap_data|safe }} }],
-        chart: { height: 150, type: 'heatmap', toolbar: { show: false } },
-        dataLabels: { enabled: false },
-        colors: ["#2ecc71"],
-        plotOptions: {
-            heatmap: {
-                radius: 5,
-                colorScale: {
-                    ranges: [{ from: 0, to: 0, color: '#f8f9fa' }, { from: 1, to: 1000, color: '#2ecc71' }]
-                }
-            }
-        }
-    };
-    new ApexCharts(document.querySelector("#activityChart"), options).render();
-</script> -->
 {% endblock %}
