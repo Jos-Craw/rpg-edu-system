@@ -76,8 +76,6 @@ class Student(models.Model):
                 total_xp += p.homework_score * 3
 
         self.xp = total_xp
-
-        # --- НОВАЯ ЛОГИКА УРОВНЕЙ ---
         xp_left = total_xp
         level = 0
 
@@ -127,7 +125,6 @@ class Lesson(models.Model):
     date = models.DateField("Дата занятия")
     topic = models.TextField("Тема урока")
     homework_description = models.TextField("Домашнее задание", blank=True)
-    # Поля для файлов напрямую в уроке
     topic_file = models.FileField("Файл темы", upload_to='lessons/topics/', null=True, blank=True)
     homework_file = models.FileField("Файл ДЗ", upload_to='lessons/hw/', null=True, blank=True)
     parent_topic = models.ForeignKey(

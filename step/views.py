@@ -214,7 +214,6 @@ def export_full_xlsx(request):
     for group in groups:
         ws = wb.create_sheet(title=group.name[:30])
 
-        # --- ЗАГОЛОВКИ ---
         headers = ["Дата"]
         students = list(group.student_set.all())
         lessons = list(group.lesson_set.all().order_by('date'))
@@ -227,7 +226,6 @@ def export_full_xlsx(request):
         for col in ws[1]:
             col.font = Font(bold=True)
 
-        # --- ДАННЫЕ ДЛЯ ГРАФИКА XP ---
         student_totals = {s.id: 0 for s in students}
 
         row_index = 2
@@ -248,7 +246,6 @@ def export_full_xlsx(request):
             ws.append(row)
             row_index += 1
 
-        # --- 📈 LINE CHART (XP рост) ---
         chart = LineChart()
         chart.title = f"Прогресс XP — {group.name}"
 
@@ -260,7 +257,6 @@ def export_full_xlsx(request):
 
         ws.add_chart(chart, f"A{row_index + 2}")
 
-        # --- 🥧 PIE CHART (ранги) ---
         rank_list = [s.rank for s in students]
         rank_count = Counter(rank_list)
 
@@ -295,7 +291,6 @@ def export_full_xlsx(request):
             ws[f"A{top_start + idx}"] = f"{idx}. {s.name}"
             ws[f"B{top_start + idx}"] = s.xp
 
-    # --- ОТДАЧА ---
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )

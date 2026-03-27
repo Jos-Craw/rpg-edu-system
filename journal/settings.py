@@ -37,7 +37,6 @@ ROOT_URLCONF = 'journal.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # ДОБАВЬТЕ СТРОКУ НИЖЕ:
         'DIRS': [os.path.join(BASE_DIR, 'templates')], 
         'APP_DIRS': True,
         'OPTIONS': {

@@ -31,7 +31,6 @@ class StudentAdmin(admin.ModelAdmin):
         current = obj.xp - start
         needed = end - start
 
-        # защита
         if current < 0:
             current = 0
         if current > needed:
